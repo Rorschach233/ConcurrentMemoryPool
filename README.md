@@ -1,8 +1,8 @@
 # 高并发内存池  
 ## 模块划分  
-  1.线程缓存(ThreadCache)  
-  2.中心缓存(CentralCache)  
-  3.页缓存(PageCache)  
+1.线程缓存(ThreadCache)  
+2.中心缓存(CentralCache)  
+3.页缓存(PageCache)  
 ## 项目考虑的问题  
 1.高并发下的线程安全问题（通过ThreadCache解决）  
 2.效率问题（通过CentralCache解决）  
