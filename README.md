@@ -27,3 +27,6 @@
 （2）NewSpan：如果用户申请超过128页的内存，则直接去向系统申请，如果申请的内存是64k-128页的内存，ThreadCache直接调用该接口获取到内存对象，如果申请的内存小于64k，首先去ThreadCache申请，如果没有则逐级向上申请，该接口主要用在CentralCache中的GetOneSpan中和申请内存范围在64k-128页中。  
 （3）MapObjectToSpan：当内存对象从ThreadCache归还给CentralCache时，每一个内存对象都需要知道自己是属于哪一个Span对象的，所以在PageCache合并Span或者是从系统申请出来的Span，都要建立一个对象到Span的映射，在归还的时候，可以通过查找这个映射关系来确定是在哪一个Span中，本接口就是为了查找映射关系。  
 （4）RelaseToPageCache：每一个Span对象中都存在着一个使用计数，当这个使用计数为0时说明该Span中的所有内存对象都是空闲的。此时，可以将这个Span对象归还给PageCache中进行合并来减少内存碎片。本接口主要在CentralCache中的ReleaseListToSpans被调用，用来归还Span对象和合并相邻空闲的Span来减少内存碎片。
+## 扩展和不足  
+**不足**：项目中并没有完全脱离malloc，比如在内存池自身数据结构的管理中，如SpanList中的span等结构，还是使用的new Span这样的操作，new的底层使用的是malloc，所以还不足以替换malloc，因为本身没有完全脱离它。  
+**扩展**：项目中增加一个定长的ObjectPool的对象池，对象池的内存直接使用brk、VirarulAlloc等向系统申请，new Span替换成对象池申请内存。这样就完全脱离的malloc，就可以替换掉malloc；在项目中使用了unordered_map来映射页id和span的关系，进而实现页的查找，而unordered_map的效率并非最优，可以使用基数树技术来改进。
