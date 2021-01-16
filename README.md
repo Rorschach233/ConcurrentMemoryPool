@@ -17,12 +17,12 @@
 （2）Deallocate：释放内存给ThreadCache。  
 （3）FetchFromCentralCache：向中心缓存区获取内存对象。  
 （4）ListTooLong：当自由链表中的对象个数超过一定数量，将内存对象归还给CentralCache。为了实现均衡技术，防止其他线程要获取该大小的内存对象还需要去PageCache中去获取，从而带来效率问题。  
-2.**中心缓存**：包括一个Span对象的双向带头循环链表数组，每一个Span对象由多页(一页4k)组成，Span对象中也包含了一条自由链表。CentralCache提供的主要接口有：  
+>2.**中心缓存**：包括一个Span对象的双向带头循环链表数组，每一个Span对象由多页(一页4k)组成，Span对象中也包含了一条自由链表。CentralCache提供的主要接口有：  
 >>（1）GetInstance：为了保证全局只有唯一的一个CentralCache,本模块采用单例模式(饿汉模式)实现，此接口用来获取单例对象。  
 （2）FetchRangeObj：获取一定数量的内存对象给ThreadCache。  
 （3）GetOneSpan：从对应位置上获取一个Span对象，如果对象位置没有Span对象，则去向PageCache去申请Span对象，该接口主要是给FetchRangeObj使用。  
 （4）ReleaseListToSpans：将ThreadCache中过长的自由链表中的内存对象重新挂到对应的Span中，主要在ThreadCache中的ListTooLong中被调用，为了均衡各线程之间的内存对象数量。  
-3.**页缓存**：包含一个由Span对象构成的SpanList数组，大小为128，如果申请的内存超过128页，则直接去向系统去申请。PageCache提供的接口主要有：  
+>3.**页缓存**：包含一个由Span对象构成的SpanList数组，大小为128，如果申请的内存超过128页，则直接去向系统去申请。PageCache提供的接口主要有：  
 >>（1）GetInstance：为了保证全局只有唯一的一个PageCache对象，本模块使用单例模式(饿汉模式)实现，此接口用来获取单例对象。  
 （2）NewSpan：如果用户申请超过128页的内存，则直接去向系统申请，如果申请的内存是64k-128页的内存，ThreadCache直接调用该接口获取到内存对象，如果申请的内存小于64k，首先去ThreadCache申请，如果没有则逐级向上申请，该接口主要用在CentralCache中的GetOneSpan中和申请内存范围在64k-128页中。  
 （3）MapObjectToSpan：当内存对象从ThreadCache归还给CentralCache时，每一个内存对象都需要知道自己是属于哪一个Span对象的，所以在PageCache合并Span或者是从系统申请出来的Span，都要建立一个对象到Span的映射，在归还的时候，可以通过查找这个映射关系来确定是在哪一个Span中，本接口就是为了查找映射关系。  
